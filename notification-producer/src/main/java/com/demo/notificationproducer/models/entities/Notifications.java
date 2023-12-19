@@ -22,7 +22,9 @@ public class Notifications {
 	@Column(name = "id", nullable = false, updatable = false)
 	private Long id;
 
+	@Column(name = "created_by", nullable = false)
 	private String createdBy;
+
 	private Date createdAt;
 
 
