@@ -23,6 +23,6 @@ public class UsersNotifications {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@MapsId("userId")
 	@JoinColumn(name = "user_id")
-	private Users users;
+	private User user;
 	private Boolean deliveryStatus;
 }

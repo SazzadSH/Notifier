@@ -41,7 +41,9 @@ public class Notification {
 	private NotificationStatus status;
 	private Boolean email;
 	@OneToOne(fetch = FetchType.LAZY)
+	@ToString.Exclude
 	private NotifyCriteria notifyCriteria;
+	@Lob
 	@Column(name = "content", columnDefinition = "TEXT")
 	private String content;
 	private String bulkFile;

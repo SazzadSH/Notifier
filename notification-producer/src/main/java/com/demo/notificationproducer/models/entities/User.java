@@ -19,14 +19,14 @@ import java.util.Set;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
-public class Users {
+@Table(name = "user")
+public class User {
 	@Setter(AccessLevel.NONE)
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@NotNull
 	@Column(name = "id", nullable = false, updatable = false)
-	private Long id;
+	private Integer id;
 
 	@Column(name = "username", length = 128)
 	private String userName;
@@ -90,7 +90,7 @@ public class Users {
 	@Column(name = "security_stamp", nullable = false, length = 36)
 	private String securityStamp;
 
-	@OneToMany(mappedBy = "users", fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
 	@ToString.Exclude
 	private Set<UsersNotifications> usersNotifications;
 }
