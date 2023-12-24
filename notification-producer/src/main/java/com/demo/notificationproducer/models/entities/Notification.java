@@ -1,12 +1,13 @@
 package com.demo.notificationproducer.models.entities;
 
+import com.demo.notificationproducer.models.enums.NotificationStatus;
+import com.demo.notificationproducer.models.enums.NotificationType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.hibernate.Hibernate;
+import org.hibernate.annotations.CreationTimestamp;
 
-import java.util.Date;
-import java.util.Objects;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
@@ -24,31 +25,27 @@ public class Notification {
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Column(name = "id", nullable = false, updatable = false)
 	private Long id;
+	@Column(name = "created_by", length = 128)
 	private String createdBy;
-	private String createdAt;
-	private Date scheduled_at;
-	private Date expireAt;
-	private String notificationType;
-	@Column(name = "notification_from", nullable = false, updatable = true)
+	@CreationTimestamp
+	private LocalDateTime createdAt;
+	@Column(name = "notification_from", length = 128)
 	private String notificationFrom;
-	private String notifyCriteria;
-	private String status;
-	private String sms;
-	private String email;
+	@Temporal(TemporalType.TIMESTAMP)
+	private LocalDateTime scheduledAt;
+	@Temporal(TemporalType.TIMESTAMP)
+	private LocalDateTime expireAt;
+	@Enumerated(EnumType.STRING)
+	private NotificationType notificationType;
+	@Column(name = "status", nullable = false)
+	private NotificationStatus status;
+	private Boolean email;
+	@OneToOne(fetch = FetchType.LAZY)
+	private NotifyCriteria notifyCriteria;
+	@Column(name = "content", columnDefinition = "TEXT")
+	private String content;
+	private String bulkFile;
 	@OneToMany(mappedBy = "notification", fetch = FetchType.LAZY)
 	@ToString.Exclude
 	private Set<UsersNotifications> usersNotifications;
-
-	@Override
-	public boolean equals(Object o) {
-		if(this == o) return true;
-		if(o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-		Notification that = (Notification) o;
-		return id != null && Objects.equals(id, that.id);
-	}
-
-	@Override
-	public int hashCode() {
-		return getClass().hashCode();
-	}
 }

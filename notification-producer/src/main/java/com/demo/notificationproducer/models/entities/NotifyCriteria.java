@@ -1,5 +1,6 @@
 package com.demo.notificationproducer.models.entities;
 
+import com.demo.notificationproducer.models.enums.UserType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -25,18 +26,19 @@ public class NotifyCriteria {
 	@ToString.Exclude
 	private Notification notification;
 
-	private String includeZones;
-	private String includeDists;
-	private String includeSubDists;
-	private String includePS;
-	private String includeInstitutes;
-	private String includeUserTypes;
-	private String includeUsers;
-	private String excludeZones;
-	private String excludeDist;
-	private String excludeSubDist;
-	private String excludePS;
-	private String excludeInstitutes;
-	private String excludeUserTypes;
-	private String excludeUsers;
+	private String zones;
+	private String dists;
+	private String subDists;
+	private String policeStations;
+	private String institutes;
+	@Enumerated(EnumType.STRING)
+	private UserType userTypes;
+	private String users;
+//	private String excludeZones;
+//	private String excludeDists;
+//	private String excludeSubDists;
+//	private String excludePS;
+//	private String excludeInstitutes;
+//	private String excludeUserTypes;
+//	private String excludeUsers;
 }
