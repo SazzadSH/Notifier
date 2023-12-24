@@ -30,9 +30,9 @@ public class NotifyCriteria {
 	private String dists;
 	private String subDists;
 	private String policeStations;
+	private String offices;
 	private String institutes;
-	@Enumerated(EnumType.STRING)
-	private UserType userTypes;
+	private String userTypes;
 	private String users;
 //	private String excludeZones;
 //	private String excludeDists;
