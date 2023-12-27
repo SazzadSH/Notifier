@@ -1,20 +1,21 @@
 package com.demo.notificationproducer.models.dtos;
 
-import com.demo.notificationproducer.models.entities.Notification;
 import com.demo.notificationproducer.models.enums.NotificationType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Getter
 @Setter
 @Builder
 public class NotificationDTO {
 	private String createdBy;
+	@JsonIgnore
 	@PastOrPresent
 	private LocalDateTime createdAt;
 	@FutureOrPresent
@@ -22,11 +23,11 @@ public class NotificationDTO {
 	@Future
 	private LocalDateTime expireAt;
 	private String notificationFrom;
-	@NotNull
-	private NotificationType notificationType;
 	private Boolean email;
 	@NotNull
 	@NotEmpty
 	@NotBlank
 	private String content;
+	@NotNull
+	private Set<NotifyCriteriaDTO> notifyCriteria;
 }

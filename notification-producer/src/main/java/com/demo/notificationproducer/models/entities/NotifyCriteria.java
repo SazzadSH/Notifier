@@ -21,24 +21,17 @@ public class NotifyCriteria {
 	@Column(name = "id", nullable = false, updatable = false)
 	private Long id;
 
-	@OneToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "notifications_id")
 	@ToString.Exclude
 	private Notification notification;
 
-	private String zones;
-	private String dists;
-	private String subDists;
-	private String policeStations;
-	private String offices;
-	private String institutes;
-	private String userTypes;
-	private String users;
-//	private String excludeZones;
-//	private String excludeDists;
-//	private String excludeSubDists;
-//	private String excludePS;
-//	private String excludeInstitutes;
-//	private String excludeUserTypes;
-//	private String excludeUsers;
+	private String location;
+	private Boolean includeOffice;
+	private Boolean includeInstitutes;
+	private String institute;
+	private String office;
+	@Enumerated(EnumType.STRING)
+	private UserType userType;
+	private String pdsId;
 }
