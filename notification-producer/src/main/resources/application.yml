@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/notifier
+    url: jdbc:postgresql://localhost:5432/dshe_sh
     username: postgres
     password: postgres
   jpa:
