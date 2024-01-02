@@ -1,14 +1,14 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/dshe_dms
+    url: jdbc:postgresql://localhost:5432/notifier
     username: postgres
     password: postgres
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 notification:
   default:
-    expiration: 3
+    expiration: 5

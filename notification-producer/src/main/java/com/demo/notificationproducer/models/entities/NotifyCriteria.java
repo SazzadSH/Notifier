@@ -22,7 +22,6 @@ public class NotifyCriteria {
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "notifications_id")
 	@ToString.Exclude
 	private Notification notification;
 

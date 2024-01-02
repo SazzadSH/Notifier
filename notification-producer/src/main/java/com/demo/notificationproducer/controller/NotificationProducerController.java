@@ -3,14 +3,10 @@ package com.demo.notificationproducer.controller;
 import com.demo.notificationproducer.models.dtos.NotificationDTO;
 import com.demo.notificationproducer.models.enums.NotificationType;
 import com.demo.notificationproducer.services.NotificationProducerService;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -25,9 +21,9 @@ public class NotificationProducerController {
 
 	@PostMapping("/notify/{notificationType}")
 	private ResponseEntity createNotification(
-			@PathVariable("notificationType") NotificationType notificationType,
-			@RequestBody NotificationDTO notificationDTO) {
-
-		return null;
+			@PathVariable("notificationType") final NotificationType notificationType,
+			@RequestBody final NotificationDTO notificationDTO) {
+		log.info("SHLOG:: Notifciation DTO: " + notificationDTO);
+		return notificationProducerService.createNotification(notificationType, notificationDTO);
 	}
 }

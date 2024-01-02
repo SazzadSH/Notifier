@@ -44,7 +44,7 @@ public class Notification {
 	private NotificationStatus status;
 	private Boolean email;
 
-	@OneToMany(fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "notification", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@ToString.Exclude
 	private Set<NotifyCriteria> notifyCriteria;
 
@@ -53,7 +53,7 @@ public class Notification {
 	private String content;
 	private String bulkFile;
 
-	@OneToMany(mappedBy = "notification", fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "notification", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@ToString.Exclude
 	private Set<UsersNotifications> usersNotifications;
 }

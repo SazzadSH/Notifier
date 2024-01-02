@@ -1,11 +1,8 @@
 package com.demo.notificationproducer.models.dtos;
 
-import com.demo.notificationproducer.models.enums.NotificationType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -13,21 +10,20 @@ import java.util.Set;
 @Getter
 @Setter
 @Builder
+@ToString
 public class NotificationDTO {
 	private String createdBy;
 	@JsonIgnore
-	@PastOrPresent
+//	@PastOrPresent
 	private LocalDateTime createdAt;
-	@FutureOrPresent
+//	@FutureOrPresent
 	private LocalDateTime scheduledAt;
-	@Future
+//	@Future
 	private LocalDateTime expireAt;
 	private String notificationFrom;
 	private Boolean email;
-	@NotNull
-	@NotEmpty
-	@NotBlank
+	@NotBlank(message = "Notification content is empty")
 	private String content;
-	@NotNull
+	@NotNull(message = "Notify Criteria is null.")
 	private Set<NotifyCriteriaDTO> notifyCriteria;
 }

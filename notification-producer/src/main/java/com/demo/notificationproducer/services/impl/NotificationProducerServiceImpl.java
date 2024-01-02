@@ -31,10 +31,57 @@ public class NotificationProducerServiceImpl implements NotificationProducerServ
 		this.notificationRepository = notificationRepository;
 	}
 
+	/**
+	 * @param notificationType
+	 * @param content
+	 * @param notifyCriteriaDTOSet
+	 * @param createdBy
+	 * @param notificationFrom
+	 * @param scheduledAt
+	 * @param expireAt
+	 * @param email
+	 */
+	@Override
+	public ResponseEntity<Object> createNotification(NotificationType notificationType, String content, Set<NotifyCriteriaDTO> notifyCriteriaDTOSet, String createdBy, String notificationFrom, LocalDateTime scheduledAt, LocalDateTime expireAt, Boolean email) {
+		if(notificationType != null && content != null
+				&& notifyCriteriaDTOSet != null && !notifyCriteriaDTOSet.isEmpty()) {
+			NotificationDTO notificationDTO = NotificationDTO.builder()
+					.content(content)
+					.notifyCriteria(notifyCriteriaDTOSet)
+					.createdBy(createdBy)
+					.notificationFrom(notificationFrom)
+					.scheduledAt(scheduledAt)
+					.expireAt(expireAt)
+					.email(email)
+					.build();
+			return this.createNotification(notificationType, notificationDTO);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * @param notificationType
+	 * @param content
+	 * @param notifyCriteriaDTOSet
+	 */
+	@Override
+	public ResponseEntity<Object> createNotification(NotificationType notificationType, String content, Set<NotifyCriteriaDTO> notifyCriteriaDTOSet) {
+		return this.createNotification(notificationType, content, notifyCriteriaDTOSet, null,
+				null, null, null, null);
+	}
+
+	/**
+	 * @param notificationType
+	 * @param notificationDTO
+	 * @return
+	 */
 	@Override
 	public ResponseEntity<Object> createNotification(NotificationType notificationType, NotificationDTO notificationDTO) {
 		notificationDTO.setCreatedAt(LocalDateTime.now());
+		log.info("SHLOG:: Notification: " + notificationDTO);
 		if(!this.validateNotification(notificationType, notificationDTO)) {
+			log.info("SHLOG:: NotificationDTO isn't valid");
 			return ResponseEntity.badRequest().build();
 		}
 
@@ -46,44 +93,62 @@ public class NotificationProducerServiceImpl implements NotificationProducerServ
 		}
 
 		Notification notification = this.buildNotificationEntity(notificationType, notificationDTO);
+		log.info("SHLOG:: Built notification entity: " + notification);
+		log.info("SHLOG:: Built notification criteria: " + notification.getNotifyCriteria());
 		notificationRepository.save(notification);
-
+		log.info("SHLOG:: Notification created");
 		return ResponseEntity.ok().build();
 	}
 
 	// validates notification parameters
 	private Boolean validateNotification(NotificationType notificationType, NotificationDTO notificationDTO) {
+		log.info("SHLOG:: Validating Notification");
+		if (notificationType == null) return false;
+
+		//If expire time exists, expire time must be later than scheduled time if it exists.
+		//Otherwise, it must be later than notification created time
 		if(notificationDTO.getScheduledAt() != null) {
 			if(!notificationDTO.getScheduledAt().isAfter(notificationDTO.getCreatedAt())) return false;
-			if(notificationDTO.getExpireAt() != null && !notificationDTO.getExpireAt().isAfter(notificationDTO.getScheduledAt())) return false;
+			if(notificationDTO.getExpireAt() != null &&
+					!notificationDTO.getExpireAt().isAfter(notificationDTO.getScheduledAt())) return false;
 		} else {
-			if(notificationDTO.getExpireAt().isAfter(notificationDTO.getCreatedAt())) return false;
+			if(notificationDTO.getExpireAt() != null &&
+					notificationDTO.getExpireAt().isAfter(notificationDTO.getCreatedAt())) return false;
 		}
 
+		//Notification content must exist and Notify Criteria must be valid
 		return (notificationDTO.getContent() == null || !notificationDTO.getContent().trim().isEmpty()) && this.validateCriteria(notificationDTO.getNotifyCriteria());
 	}
 
 	// validates notification criteria
 	private Boolean validateCriteria(Set<NotifyCriteriaDTO> notifyCriteriaDTOSet) {
+		log.info("SHLOG:: Validating Notify Criteria");
 		if (notifyCriteriaDTOSet == null || notifyCriteriaDTOSet.isEmpty()) return false;
 		for(NotifyCriteriaDTO notifyCriteriaDTO : notifyCriteriaDTOSet) {
-			if(notifyCriteriaDTO.getIncludeInstitutes().equals(Boolean.FALSE) &&
-			notifyCriteriaDTO.getIncludeOffices().equals(Boolean.FALSE)) return false;
+			//Either institutes or office or both must be selected unless pds id is present
+			if(notifyCriteriaDTO.getPdsId() == null &&
+					((notifyCriteriaDTO.getIncludeInstitutes() == null ||
+							notifyCriteriaDTO.getIncludeInstitutes().equals(Boolean.FALSE)) &&
+							(notifyCriteriaDTO.getIncludeOffices() == null ||
+									notifyCriteriaDTO.getIncludeOffices().equals(Boolean.FALSE)))) return false;
 
-			if(notifyCriteriaDTO.getUserTypes() == null) return false;
+			//Without pds id, User Type must be defined
+			if(notifyCriteriaDTO.getPdsId() == null &&
+					notifyCriteriaDTO.getUserTypes() == null) return false;
 
+			//Without any of these, criteria must be invalid
 			if((notifyCriteriaDTO.getLocation() == null || notifyCriteriaDTO.getLocation().trim().isEmpty())
 			&& (notifyCriteriaDTO.getInstitute() == null || notifyCriteriaDTO.getInstitute().trim().isEmpty())
 			&& (notifyCriteriaDTO.getOffice() == null || notifyCriteriaDTO.getOffice().trim().isEmpty())
-			&& notifyCriteriaDTO.getPdsId() == null || notifyCriteriaDTO.getPdsId().trim().isEmpty()) {
-				return false;
-			}
+			&& notifyCriteriaDTO.getPdsId() == null || notifyCriteriaDTO.getPdsId().trim().isEmpty()) return false;
 		}
+		log.info("Notify criteria is valid");
 		return true;
 	}
 
 	// creates notification entity to persist
 	private Notification buildNotificationEntity(NotificationType notificationType, NotificationDTO notificationDTO) {
+		log.info("SHLOG:: Building Notification Entity");
 		return Notification.builder()
 				.notificationType(notificationType)
 				.notifyCriteria(notificationDTO.getNotifyCriteria().stream()
