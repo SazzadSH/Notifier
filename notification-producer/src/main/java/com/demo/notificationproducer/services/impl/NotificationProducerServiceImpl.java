@@ -32,14 +32,14 @@ public class NotificationProducerServiceImpl implements NotificationProducerServ
 	}
 
 	/**
-	 * @param notificationType
-	 * @param content
-	 * @param notifyCriteriaDTOSet
-	 * @param createdBy
-	 * @param notificationFrom
-	 * @param scheduledAt
-	 * @param expireAt
-	 * @param email
+	 * @param notificationType indicates the type of notifications: Regular, Notice, Bulk
+	 * @param content message to notify
+	 * @param notifyCriteriaDTOSet indicates whom to notify
+	 * @param createdBy username of who created the notification
+	 * @param notificationFrom username / name of whom the notification is on behalf
+	 * @param scheduledAt scheduled time to notify
+	 * @param expireAt notification expiration time
+	 * @param email flag indicating the notification should be sent to email or not
 	 */
 	@Override
 	public ResponseEntity<Object> createNotification(NotificationType notificationType, String content, Set<NotifyCriteriaDTO> notifyCriteriaDTOSet, String createdBy, String notificationFrom, LocalDateTime scheduledAt, LocalDateTime expireAt, Boolean email) {
@@ -61,9 +61,9 @@ public class NotificationProducerServiceImpl implements NotificationProducerServ
 	}
 
 	/**
-	 * @param notificationType
-	 * @param content
-	 * @param notifyCriteriaDTOSet
+	 * @param notificationType indicates the type of notifications: Regular, Notice, Bulk
+	 * @param content message to notify
+	 * @param notifyCriteriaDTOSet indicates whom to notify
 	 */
 	@Override
 	public ResponseEntity<Object> createNotification(NotificationType notificationType, String content, Set<NotifyCriteriaDTO> notifyCriteriaDTOSet) {
@@ -72,9 +72,9 @@ public class NotificationProducerServiceImpl implements NotificationProducerServ
 	}
 
 	/**
-	 * @param notificationType
-	 * @param notificationDTO
-	 * @return
+	 * @param notificationType indicates the type of notifications: Regular, Notice, Bulk
+	 * @param notificationDTO is object containing the parameter and attributes of one single notification
+	 * @return HTTP Response
 	 */
 	@Override
 	public ResponseEntity<Object> createNotification(NotificationType notificationType, NotificationDTO notificationDTO) {
@@ -117,7 +117,8 @@ public class NotificationProducerServiceImpl implements NotificationProducerServ
 		}
 
 		//Notification content must exist and Notify Criteria must be valid
-		return (notificationDTO.getContent() == null || !notificationDTO.getContent().trim().isEmpty()) && this.validateCriteria(notificationDTO.getNotifyCriteria());
+		return (notificationDTO.getContent() == null || !notificationDTO.getContent().trim().isEmpty()) &&
+				this.validateCriteria(notificationDTO.getNotifyCriteria());
 	}
 
 	// validates notification criteria
@@ -160,7 +161,7 @@ public class NotificationProducerServiceImpl implements NotificationProducerServ
 				.scheduledAt(notificationDTO.getScheduledAt())
 				.expireAt(notificationDTO.getExpireAt())
 				.status(NotificationStatus.QUEUED)
-				.email(notificationDTO.getEmail())
+				.email(notificationDTO.getEmail() == Boolean.TRUE ? Boolean.TRUE : Boolean.FALSE)
 				.build();
 	}
 

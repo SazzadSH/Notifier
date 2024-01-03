@@ -40,6 +40,7 @@ public class Notification {
 
 	@Enumerated(EnumType.STRING)
 	private NotificationType notificationType;
+	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
 	private NotificationStatus status;
 	private Boolean email;

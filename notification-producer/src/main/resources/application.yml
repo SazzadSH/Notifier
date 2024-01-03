@@ -5,10 +5,10 @@ spring:
     password: postgres
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: create
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 notification:
   default:
-    expiration: 5
+    expiry: 5
