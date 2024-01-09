@@ -1,34 +1,35 @@
 package com.demo.notificationproducer.controller;
 
 import com.demo.notificationproducer.models.dtos.NotificationDTO;
-import com.demo.notificationproducer.models.dtos.NotifyCriteriaDTO;
-import com.demo.notificationproducer.models.entities.NotifyCriteria;
+import com.demo.notificationproducer.models.dtos.NotificationTargetDTO;
 import com.demo.notificationproducer.models.enums.NotificationType;
-import com.demo.notificationproducer.services.NotificationProducerService;
+import com.demo.notificationproducer.services.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
 @RestController
 @RequestMapping("/v1/producer")
 public class NotificationProducerController {
-	private NotificationProducerService notificationProducerService;
+	private NotificationService notificationService;
 
 	@Autowired
-	public void setNotificationProducerService(NotificationProducerService notificationProducerService) {
-		this.notificationProducerService = notificationProducerService;
+	public void setNotificationProducerService(NotificationService notificationService) {
+		this.notificationService = notificationService;
 	}
 
 	@PostMapping("/notify/{notificationType}")
 	private ResponseEntity createNotification(
-			@PathVariable("notificationType") final NotificationType notificationType,
+			@PathVariable("notificationType") final List<NotificationType> notificationType,
 			@RequestBody final NotificationDTO notificationDTO) {
 		log.info("SHLOG:: Notifciation DTO: " + notificationDTO);
-		return notificationProducerService.createNotification(notificationType, notificationDTO);
+		return notificationService.createNotification(notificationType, notificationDTO);
+		return null;
 	}
 
 	@PostMapping("/notify2/{notificationType}")
@@ -36,7 +37,7 @@ public class NotificationProducerController {
 			@PathVariable("notificationType") final NotificationType notificationType,
 			@RequestParam final String content,
 			@RequestParam final String pdsId) {
-		return notificationProducerService.createNotification(notificationType, content,
-				Set.of(NotifyCriteriaDTO.builder().pdsId(pdsId).build()));
+		return notificationService.createNotification(notificationType, content,
+				Set.of(NotificationTargetDTO.builder().pdsId(pdsId).build()));
 	}
 }

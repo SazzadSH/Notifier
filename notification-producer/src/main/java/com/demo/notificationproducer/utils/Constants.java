@@ -9,4 +9,6 @@ public class Constants {
 	public static final int INSPECTOR_TYPE_MAX_LENGTH = 20;
 	public static final int PERMISSION_STRING_MAX_LENGTH = 30;
 	public static final int USER_TYPE_MAX_LENGTH = 20;
+	public static final int NOTIFICATION_TYPE_MAX_LENGTH = 30;
+	public static final int NOTIFICATION_STATUS_MAX_LENGTH = 20;
 }

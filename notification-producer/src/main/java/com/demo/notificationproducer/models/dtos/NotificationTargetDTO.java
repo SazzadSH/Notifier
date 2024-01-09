@@ -10,12 +10,13 @@ import lombok.ToString;
 @Setter
 @Builder
 @ToString
-public class NotifyCriteriaDTO {
-	private String location;
+public class NotificationTargetDTO {
+	private Integer location;
 	private Boolean includeOffices;
 	private Boolean includeInstitutes;
-	private String office;
-	private String institute;
-	private UserType userTypes;
-	private String pdsId;
+	private Integer office;
+	private Integer institute;
+	private UserType userType;
+	private Integer user;
+	private String bulkFile;
 }
