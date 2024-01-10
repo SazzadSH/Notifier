@@ -14,8 +14,6 @@ import java.util.Set;
 @ToString
 public class NotificationDTO {
 	private String createdBy;
-	@JsonIgnore
-	private LocalDateTime createdAt;
 	private LocalDateTime scheduledAt;
 	private LocalDateTime expireAt;
 	private String notificationFrom;

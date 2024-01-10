@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -25,19 +26,18 @@ public class NotificationProducerController {
 
 	@PostMapping("/notify/{notificationType}")
 	private ResponseEntity createNotification(
-			@PathVariable("notificationType") final List<NotificationType> notificationType,
+			@PathVariable("notificationType") final EnumSet<NotificationType> notificationTypeEnumSet,
 			@RequestBody final NotificationDTO notificationDTO) {
 		log.info("SHLOG:: Notifciation DTO: " + notificationDTO);
-		return notificationService.createNotification(notificationType, notificationDTO);
-		return null;
+		return notificationService.createNotification(notificationTypeEnumSet, notificationDTO);
 	}
 
 	@PostMapping("/notify2/{notificationType}")
 	private ResponseEntity createNotification2(
-			@PathVariable("notificationType") final NotificationType notificationType,
+			@PathVariable("notificationType") final EnumSet<NotificationType> notificationTypeEnumSet,
 			@RequestParam final String content,
-			@RequestParam final String pdsId) {
-		return notificationService.createNotification(notificationType, content,
-				Set.of(NotificationTargetDTO.builder().pdsId(pdsId).build()));
+			@RequestParam final Integer userId) {
+		return notificationService.createNotification(notificationTypeEnumSet, content,
+				Set.of(NotificationTargetDTO.builder().user(userId).build()));
 	}
 }

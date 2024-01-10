@@ -17,6 +17,7 @@ public class NotificationTargetDTO {
 	private Integer office;
 	private Integer institute;
 	private UserType userType;
+	private Integer designation;
 	private Integer user;
 	private String bulkFile;
 }

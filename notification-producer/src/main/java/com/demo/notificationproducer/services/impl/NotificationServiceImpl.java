@@ -2,10 +2,12 @@ package com.demo.notificationproducer.services.impl;
 
 import com.demo.notificationproducer.models.dtos.NotificationDTO;
 import com.demo.notificationproducer.models.dtos.NotificationTargetDTO;
+import com.demo.notificationproducer.models.entities.Location;
 import com.demo.notificationproducer.models.entities.Notification;
+import com.demo.notificationproducer.models.entities.NotificationTarget;
 import com.demo.notificationproducer.models.enums.NotificationStatus;
 import com.demo.notificationproducer.models.enums.NotificationType;
-import com.demo.notificationproducer.repositories.NotificationRepository;
+import com.demo.notificationproducer.repositories.*;
 import com.demo.notificationproducer.services.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,14 +28,44 @@ public class NotificationServiceImpl implements NotificationService {
 	@Autowired
 	private Environment environment;
 	private NotificationRepository notificationRepository;
+	private LocationRepositoty locationRepositoty;
+	private EducationalInstituteRepository educationalInstituteRepository;
+	private UserRepository userRepository;
+	private OfficeRepository officeRepository;
+	private DesignationRepository designationRepository;
 
 	@Autowired
 	public void setNotificationRepository(NotificationRepository notificationRepository) {
 		this.notificationRepository = notificationRepository;
 	}
 
+	@Autowired
+	public void setLocationRepositoty(LocationRepositoty locationRepositoty) {
+		this.locationRepositoty = locationRepositoty;
+	}
+
+	@Autowired
+	public void setEducationalInstituteRepository(EducationalInstituteRepository educationalInstituteRepository) {
+		this.educationalInstituteRepository = educationalInstituteRepository;
+	}
+
+	@Autowired
+	public void setUserRepository(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
+
+	@Autowired
+	public void setOfficeRepository(OfficeRepository officeRepository) {
+		this.officeRepository = officeRepository;
+	}
+
+	@Autowired
+	public void setDesignationRepository(DesignationRepository designationRepository) {
+		this.designationRepository = designationRepository;
+	}
+
 	/**
-	 * @param notificationType indicates the type of notifications: Regular, Notice, Bulk
+	 * @param notificationTypeEnumSet indicates the type of notifications: Regular, Notice, Bulk
 	 * @param content message to notify
 	 * @param notificationTargetDTOSet indicates whom to notify
 	 * @param createdBy username of who created the notification
@@ -43,8 +75,11 @@ public class NotificationServiceImpl implements NotificationService {
 	 * @param email flag indicating the notification should be sent to email or not
 	 */
 	@Override
-	public ResponseEntity<Object> createNotification(NotificationType notificationType, String content, Set<NotificationTargetDTO> notificationTargetDTOSet, String createdBy, String notificationFrom, LocalDateTime scheduledAt, LocalDateTime expireAt, Boolean email) {
-		if(notificationType != null && content != null
+	public ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, String content,
+	                                                 Set<NotificationTargetDTO> notificationTargetDTOSet, String createdBy,
+	                                                 String notificationFrom, LocalDateTime scheduledAt, LocalDateTime expireAt,
+	                                                 Boolean email) {
+		if(notificationTypeEnumSet != null && content != null
 				&& notificationTargetDTOSet != null && !notificationTargetDTOSet.isEmpty()) {
 			NotificationDTO notificationDTO = NotificationDTO.builder()
 					.content(content)
@@ -54,31 +89,30 @@ public class NotificationServiceImpl implements NotificationService {
 					.scheduledAt(scheduledAt)
 					.expireAt(expireAt)
 					.build();
-			return this.createNotification(notificationType, notificationDTO);
+			return this.createNotification(notificationTypeEnumSet, notificationDTO);
 		} else {
 			return null;
 		}
 	}
 
 	/**
-	 * @param notificationType indicates the type of notifications: Regular, Notice, Bulk
+	 * @param notificationTypeEnumSet indicates the type of notifications: Regular, Notice, Bulk
 	 * @param content message to notify
 	 * @param notificationTargetDTOSet indicates whom to notify
 	 */
 	@Override
-	public ResponseEntity<Object> createNotification(NotificationType notificationType, String content, Set<NotificationTargetDTO> notificationTargetDTOSet) {
-		return this.createNotification(notificationType, content, notificationTargetDTOSet, null,
+	public ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, String content, Set<NotificationTargetDTO> notificationTargetDTOSet) {
+		return this.createNotification(notificationTypeEnumSet, content, notificationTargetDTOSet, null,
 				null, null, null, null);
 	}
 
 	/**
-	 * @param notificationType indicates the type of notifications: Regular, Notice, Bulk
+	 * @param notificationTypeEnumSet indicates the type of notifications: Regular, Notice, Bulk, Push, Email, Persistent
 	 * @param notificationDTO is object containing the parameter and attributes of one single notification
 	 * @return HTTP Response
 	 */
 	@Override
 	public ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, NotificationDTO notificationDTO) {
-		notificationDTO.setCreatedAt(LocalDateTime.now());
 		log.info("SHLOG:: Notification: " + notificationDTO);
 		if(!this.validateNotification(notificationTypeEnumSet, notificationDTO)) {
 			log.info("SHLOG:: NotificationDTO isn't valid");
@@ -94,84 +128,108 @@ public class NotificationServiceImpl implements NotificationService {
 
 		Notification notification = this.buildNotificationEntity(notificationTypeEnumSet, notificationDTO);
 		log.info("SHLOG:: Built notification entity: " + notification);
-		log.info("SHLOG:: Built notification criteria: " + notification.getNotifyCriteria());
+		log.info("SHLOG:: Built notification criteria: " + notification.getNotificationTargets());
 		notificationRepository.save(notification);
 		log.info("SHLOG:: Notification created");
 		return ResponseEntity.ok().build();
 	}
 
 	// validates notification parameters
-	private Boolean validateNotification(final Set<NotificationType> notificationTypeSet, final NotificationDTO notificationDTO) {
+	private Boolean validateNotification(final EnumSet<NotificationType> notificationTypeEnumSet, final NotificationDTO notificationDTO) {
 		log.info("SHLOG:: Validating Notification");
-		if (notificationTypeSet == null || notificationTypeSet.isEmpty()) return false;
+		if (notificationTypeEnumSet == null || notificationTypeEnumSet.isEmpty()) return false;
 
 		//If expire time exists, expire time must be later than scheduled time if it exists.
 		//Otherwise, it must be later than notification created time
 		if(notificationDTO.getScheduledAt() != null) {
-			if(!notificationDTO.getScheduledAt().isAfter(notificationDTO.getCreatedAt())) return false;
+			if(!notificationDTO.getScheduledAt().isAfter(LocalDateTime.now())) return false;
 			if(notificationDTO.getExpireAt() != null &&
 					!notificationDTO.getExpireAt().isAfter(notificationDTO.getScheduledAt())) return false;
 		} else {
 			if(notificationDTO.getExpireAt() != null &&
-					notificationDTO.getExpireAt().isAfter(notificationDTO.getCreatedAt())) return false;
+					!notificationDTO.getExpireAt().isAfter(LocalDateTime.now())) return false;
 		}
 
 		//Notification content must exist and Notify Criteria must be valid
 		return (notificationDTO.getContent() == null || !notificationDTO.getContent().trim().isEmpty()) &&
-				this.validateCriteria(notificationDTO.getNotificationTargetDTOSet());
+				this.validateTarget(notificationDTO.getNotificationTargetDTOSet());
 	}
 
 	// validates notification criteria
-	private Boolean validateCriteria(Set<NotificationTargetDTO> notificationTargetDTOSet) {
-		log.info("SHLOG:: Validating Notify Criteria");
+	private Boolean validateTarget(Set<NotificationTargetDTO> notificationTargetDTOSet) {
+		log.info("SHLOG:: Validating Notify targets");
 		if (notificationTargetDTOSet == null || notificationTargetDTOSet.isEmpty()) return false;
-		for(NotificationTargetDTO notificationTargetDTO : notificationTargetDTOSet) {
-			//Either institutes or office or both must be selected unless pds id is present
-			if(notificationTargetDTO.getUser() == null &&
-					((notificationTargetDTO.getIncludeInstitutes() == null ||
-							notificationTargetDTO.getIncludeInstitutes().equals(Boolean.FALSE)) &&
-							(notificationTargetDTO.getIncludeOffices() == null ||
-									notificationTargetDTO.getIncludeOffices().equals(Boolean.FALSE)))) return false;
+		return notificationTargetDTOSet.parallelStream()
+						.allMatch(this::isValidTarget);
+	}
 
-			//Without any of these, criteria must be invalid
-			if(notificationTargetDTO.getLocation() == null && notificationTargetDTO.getInstitute() == null &&
-					notificationTargetDTO.getOffice() == null && notificationTargetDTO.getUser() == null) return false;
-		}
-		log.info("Notify criteria is valid");
-		return true;
+	private Boolean isValidTarget(NotificationTargetDTO notificationTargetDTO) {
+		//Either institutes or office or both must be selected unless pds id is present
+		if(notificationTargetDTO.getUser() == null &&
+				((notificationTargetDTO.getIncludeInstitutes() == null ||
+						notificationTargetDTO.getIncludeInstitutes().equals(Boolean.FALSE)) &&
+						(notificationTargetDTO.getIncludeOffices() == null ||
+								notificationTargetDTO.getIncludeOffices().equals(Boolean.FALSE)))) return false;
+
+		//Without any of these, target must be invalid
+		return notificationTargetDTO.getLocation() != null || notificationTargetDTO.getInstitute() != null ||
+				notificationTargetDTO.getOffice() != null || notificationTargetDTO.getUser() != null ||
+				(notificationTargetDTO.getBulkFile() != null && !notificationTargetDTO.getBulkFile().trim().isEmpty());
 	}
 
 	// creates notification entity to persist
-	private Notification buildNotificationEntity(NotificationType notificationType, NotificationDTO notificationDTO) {
+	private Notification buildNotificationEntity(EnumSet<NotificationType> notificationTypeEnumSet, NotificationDTO notificationDTO) {
 		log.info("SHLOG:: Building Notification Entity");
 		return Notification.builder()
-				.notificationTypes(notificationType)
-				.notifyCriteria(notificationDTO.getNotificationTargetDTOSet().stream()
-						.map(NotificationServiceImpl::convertCriteriaDTOtoEntity)
-						.collect(Collectors.toSet()))
+				.notificationTypes(this.stringifyEnumList(notificationTypeEnumSet))
+				.notificationTargets(this.buildTargetEntitySet(notificationDTO.getNotificationTargetDTOSet()))
 				.notificationFrom(notificationDTO.getNotificationFrom())
 				.content(notificationDTO.getContent())
-				.createdAt(notificationDTO.getCreatedAt())
+				.createdAt(LocalDateTime.now())
 				.scheduledAt(notificationDTO.getScheduledAt())
 				.expiresAt(notificationDTO.getExpireAt())
-				.status(NotificationStatus.QUEUED)
-				.email(notificationDTO.getEmail() == Boolean.TRUE ? Boolean.TRUE : Boolean.FALSE)
+				.status(notificationDTO.getScheduledAt() == null ? NotificationStatus.QUEUED : NotificationStatus.SCHEDULED)
 				.build();
 	}
 
-	private static com.demo.notificationproducer.models.entities.NotificationTarget convertCriteriaDTOtoEntity(NotificationTargetDTO notificationTargetDTO) {
-			return com.demo.notificationproducer.models.entities.NotificationTarget.builder().location(notificationTargetDTO.getLocation())
-					.userType(notificationTargetDTO.getUserTypes())
-					.institute(notificationTargetDTO.getInstitute())
-					.office(notificationTargetDTO.getOffice())
-					.includeOffice(notificationTargetDTO.getIncludeOffices())
-					.includeInstitutes(notificationTargetDTO.getIncludeInstitutes())
-					.pdsId(notificationTargetDTO.getPdsId())
+	private Set<NotificationTarget> buildTargetEntitySet(Set<NotificationTargetDTO> notificationTargetDTOSet) {
+		return notificationTargetDTOSet.stream()
+				.map(this::convertTargetDTOtoEntity)
+				.collect(Collectors.toSet());
+	}
+
+	private NotificationTarget convertTargetDTOtoEntity(NotificationTargetDTO notificationTargetDTO) {
+		if(notificationTargetDTO.getBulkFile() != null && notificationTargetDTO.getBulkFile().trim().isEmpty())
+			return NotificationTarget.builder()
+					.bulkFile(notificationTargetDTO.getBulkFile())
 					.build();
+		else if(notificationTargetDTO.getUser() != null) return NotificationTarget.builder()
+				.user(userRepository.getReferenceById(notificationTargetDTO.getUser()))
+				.build();
+
+		NotificationTarget notificationTarget = NotificationTarget.builder()
+				.includeOffice(notificationTargetDTO.getIncludeOffices())
+				.includeInstitutes(notificationTargetDTO.getIncludeInstitutes())
+				.userType(notificationTargetDTO.getUserType())
+				.build();
+
+		if(notificationTargetDTO.getDesignation() != null)
+			notificationTarget.setDesignation(designationRepository.getReferenceById(notificationTargetDTO.getDesignation()));
+
+		if(notificationTargetDTO.getInstitute() != null && notificationTargetDTO.getIncludeInstitutes().equals(Boolean.TRUE))
+			notificationTarget.setEducationalInstitute(educationalInstituteRepository.getReferenceById(notificationTargetDTO.getInstitute()));
+
+		if(notificationTargetDTO.getOffice() != null && notificationTargetDTO.getIncludeOffices().equals(Boolean.TRUE))
+			notificationTarget.setOffice(officeRepository.getReferenceById(notificationTargetDTO.getOffice()));
+
+		if(notificationTargetDTO.getInstitute() != null || notificationTargetDTO.getOffice() != null) return notificationTarget;
+
+		notificationTarget.setLocation(locationRepositoty.getReferenceById(notificationTargetDTO.getLocation()));
+		return notificationTarget;
 	}
 
 	private String stringifyEnumList(EnumSet<NotificationType> notificationTypeEnumSet) {
-		notificationTypeEnumSet.stream()
+		return notificationTypeEnumSet.stream()
 				.map(Enum::name)
 				.collect(Collectors.joining(", "));
 	}
