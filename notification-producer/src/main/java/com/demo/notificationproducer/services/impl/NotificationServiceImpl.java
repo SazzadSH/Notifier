@@ -12,6 +12,7 @@ import com.demo.notificationproducer.services.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.data.relational.core.sql.In;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -72,13 +73,11 @@ public class NotificationServiceImpl implements NotificationService {
 	 * @param notificationFrom username / name of whom the notification is on behalf
 	 * @param scheduledAt scheduled time to notify
 	 * @param expireAt notification expiration time
-	 * @param email flag indicating the notification should be sent to email or not
 	 */
 	@Override
-	public ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, String content,
-	                                                 Set<NotificationTargetDTO> notificationTargetDTOSet, String createdBy,
-	                                                 String notificationFrom, LocalDateTime scheduledAt, LocalDateTime expireAt,
-	                                                 Boolean email) {
+	public ResponseEntity<Object> createNotification(Integer createdBy, EnumSet<NotificationType> notificationTypeEnumSet, String content,
+	                                                 Set<NotificationTargetDTO> notificationTargetDTOSet, String notificationFrom,
+	                                                 LocalDateTime scheduledAt, LocalDateTime expireAt) {
 		if(notificationTypeEnumSet != null && content != null
 				&& notificationTargetDTOSet != null && !notificationTargetDTOSet.isEmpty()) {
 			NotificationDTO notificationDTO = NotificationDTO.builder()
@@ -89,7 +88,7 @@ public class NotificationServiceImpl implements NotificationService {
 					.scheduledAt(scheduledAt)
 					.expireAt(expireAt)
 					.build();
-			return this.createNotification(notificationTypeEnumSet, notificationDTO);
+			return this.createNotification(notificationDTO);
 		} else {
 			return null;
 		}
@@ -101,32 +100,27 @@ public class NotificationServiceImpl implements NotificationService {
 	 * @param notificationTargetDTOSet indicates whom to notify
 	 */
 	@Override
-	public ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, String content, Set<NotificationTargetDTO> notificationTargetDTOSet) {
-		return this.createNotification(notificationTypeEnumSet, content, notificationTargetDTOSet, null,
-				null, null, null, null);
+	public ResponseEntity<Object> createNotification(Integer createdBy, EnumSet<NotificationType> notificationTypeEnumSet, String content,
+	                                                 Set<NotificationTargetDTO> notificationTargetDTOSet) {
+		return this.createNotification(createdBy, notificationTypeEnumSet, content, notificationTargetDTOSet, null,
+				null, null);
 	}
 
 	/**
-	 * @param notificationTypeEnumSet indicates the type of notifications: Regular, Notice, Bulk, Push, Email, Persistent
 	 * @param notificationDTO is object containing the parameter and attributes of one single notification
 	 * @return HTTP Response
 	 */
 	@Override
-	public ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, NotificationDTO notificationDTO) {
+	public ResponseEntity<Object> createNotification(NotificationDTO notificationDTO) {
 		log.info("SHLOG:: Notification: " + notificationDTO);
-		if(!this.validateNotification(notificationTypeEnumSet, notificationDTO)) {
+		if(!this.validateNotification(notificationDTO)) {
 			log.info("SHLOG:: NotificationDTO isn't valid");
 			return ResponseEntity.badRequest().build();
 		}
-
 		//Notification expiration
-		if(notificationDTO.getExpireAt() == null) {
-			String expirationInDays = environment.getProperty("notification.default.expiry");
-			if(expirationInDays != null) notificationDTO.setExpireAt(LocalDateTime.now().plusDays(Integer.parseInt(expirationInDays)));
-			else notificationDTO.setExpireAt(LocalDateTime.now().plusDays(3));
-		}
+		if(notificationDTO.getExpireAt() == null) notificationDTO.setExpireAt(this.getDefaultNotificationExpiryTime());
 
-		Notification notification = this.buildNotificationEntity(notificationTypeEnumSet, notificationDTO);
+		Notification notification = this.buildNotificationEntity(notificationDTO);
 		log.info("SHLOG:: Built notification entity: " + notification);
 		log.info("SHLOG:: Built notification criteria: " + notification.getNotificationTargets());
 		notificationRepository.save(notification);
@@ -134,10 +128,17 @@ public class NotificationServiceImpl implements NotificationService {
 		return ResponseEntity.ok().build();
 	}
 
+	private LocalDateTime getDefaultNotificationExpiryTime() {
+		String expirationInDays = environment.getProperty("notification.default.expiry");
+		if(expirationInDays != null) return LocalDateTime.now().plusDays(Integer.parseInt(expirationInDays));
+		else return LocalDateTime.now().plusDays(3);
+	}
+
 	// validates notification parameters
-	private Boolean validateNotification(final EnumSet<NotificationType> notificationTypeEnumSet, final NotificationDTO notificationDTO) {
+	private Boolean validateNotification(final NotificationDTO notificationDTO) {
 		log.info("SHLOG:: Validating Notification");
-		if (notificationTypeEnumSet == null || notificationTypeEnumSet.isEmpty()) return false;
+		if (notificationDTO.getNotificationTypeEnumSet() == null || notificationDTO.getNotificationTypeEnumSet().isEmpty()) return false;
+		if(notificationDTO.getCreatedBy() == null) return false;
 
 		//If expire time exists, expire time must be later than scheduled time if it exists.
 		//Otherwise, it must be later than notification created time
@@ -178,10 +179,11 @@ public class NotificationServiceImpl implements NotificationService {
 	}
 
 	// creates notification entity to persist
-	private Notification buildNotificationEntity(EnumSet<NotificationType> notificationTypeEnumSet, NotificationDTO notificationDTO) {
+	private Notification buildNotificationEntity(NotificationDTO notificationDTO) {
 		log.info("SHLOG:: Building Notification Entity");
 		return Notification.builder()
-				.notificationTypes(this.stringifyEnumList(notificationTypeEnumSet))
+				.createdBy(userRepository.getReferenceById(notificationDTO.getCreatedBy()))
+				.notificationTypes(this.stringifyEnumList(notificationDTO.getNotificationTypeEnumSet()))
 				.notificationTargets(this.buildTargetEntitySet(notificationDTO.getNotificationTargetDTOSet()))
 				.notificationFrom(notificationDTO.getNotificationFrom())
 				.content(notificationDTO.getContent())
@@ -193,9 +195,12 @@ public class NotificationServiceImpl implements NotificationService {
 	}
 
 	private Set<NotificationTarget> buildTargetEntitySet(Set<NotificationTargetDTO> notificationTargetDTOSet) {
-		return notificationTargetDTOSet.stream()
+		log.info("Creating target entity set");
+		Set<NotificationTarget> notificationTargetSet = notificationTargetDTOSet.stream()
 				.map(this::convertTargetDTOtoEntity)
 				.collect(Collectors.toSet());
+		log.info("Notification taget entity set: " + notificationTargetSet);
+		return notificationTargetSet;
 	}
 
 	private NotificationTarget convertTargetDTOtoEntity(NotificationTargetDTO notificationTargetDTO) {

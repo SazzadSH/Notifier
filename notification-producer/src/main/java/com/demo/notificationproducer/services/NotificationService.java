@@ -12,11 +12,12 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public interface NotificationService {
-	ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, NotificationDTO notificationDTO);
-	ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, String content,
-	                                          Set<NotificationTargetDTO> notificationTargetDTO, String createdBy, String notificationFrom,
-	                                          LocalDateTime scheduledAt, LocalDateTime expireAt, Boolean email);
-	ResponseEntity<Object> createNotification(EnumSet<NotificationType> notificationTypeEnumSet, String content, Set<NotificationTargetDTO> notificationTargetDTOSet);
+	ResponseEntity<Object> createNotification(NotificationDTO notificationDTO);
+	ResponseEntity<Object> createNotification(Integer createdBy, EnumSet<NotificationType> notificationTypeEnumSet, String content,
+	                                          Set<NotificationTargetDTO> notificationTargetDTOSet, String notificationFrom,
+	                                          LocalDateTime scheduledAt, LocalDateTime expireAt);
+	ResponseEntity<Object> createNotification(Integer createdBy, EnumSet<NotificationType> notificationTypeEnumSet, String content,
+	                                          Set<NotificationTargetDTO> notificationTargetDTOSet);
 
 
 

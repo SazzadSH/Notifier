@@ -46,7 +46,7 @@ public class NotificationTarget {
 	private UserType userType;
 
 	@OneToOne(fetch = FetchType.EAGER)
-	@Column(name = "designation_id")
+	@JoinColumn(name = "designation_id")
 	private Designation designation;
 
 	@OneToOne(fetch = FetchType.EAGER)

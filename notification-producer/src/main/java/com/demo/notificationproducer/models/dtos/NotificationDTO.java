@@ -1,11 +1,13 @@
 package com.demo.notificationproducer.models.dtos;
 
 import com.demo.notificationproducer.models.entities.NotificationTarget;
+import com.demo.notificationproducer.models.enums.NotificationType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.Set;
 
 @Getter
@@ -13,7 +15,7 @@ import java.util.Set;
 @Builder
 @ToString
 public class NotificationDTO {
-	private String createdBy;
+	private Integer createdBy;
 	private LocalDateTime scheduledAt;
 	private LocalDateTime expireAt;
 	private String notificationFrom;
@@ -21,4 +23,6 @@ public class NotificationDTO {
 	private String content;
 	@NotNull(message = "Notify Criteria is null.")
 	private Set<NotificationTargetDTO> notificationTargetDTOSet;
+	@NotNull
+	private EnumSet<NotificationType> notificationTypeEnumSet;
 }
