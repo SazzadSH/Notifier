@@ -3,6 +3,8 @@ package com.demo.notificationproducer.models.entities;
 import com.demo.notificationproducer.models.enums.NotificationStatus;
 import com.demo.notificationproducer.models.enums.NotificationType;
 import com.demo.notificationproducer.utils.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

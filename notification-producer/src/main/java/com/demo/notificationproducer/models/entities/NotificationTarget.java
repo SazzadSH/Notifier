@@ -1,6 +1,9 @@
 package com.demo.notificationproducer.models.entities;
 
 import com.demo.notificationproducer.models.enums.UserType;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

@@ -4,6 +4,8 @@ import com.demo.notificationproducer.models.enums.DeviceType;
 import com.demo.notificationproducer.models.enums.UserStatus;
 import com.demo.notificationproducer.models.enums.UserType;
 import com.demo.notificationproducer.utils.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -19,7 +21,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "user")
+@Table(name = "user", schema = "public")
 public class User {
 	@Setter(AccessLevel.NONE)
 	@Id

@@ -7,6 +7,7 @@ import com.demo.notificationproducer.models.entities.NotificationTarget;
 import com.demo.notificationproducer.models.enums.NotificationType;
 import com.demo.notificationproducer.repositories.NotificationRepository;
 import com.demo.notificationproducer.services.NotificationService;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.relational.core.sql.In;
@@ -79,5 +80,14 @@ public class NotificationProducerController {
 //		);
 		return null;
 //		return notificationService.createNotification(createdBy, notificationTypeEnumSet, content, notificationTargetDTOSet);
+	}
+
+	@GetMapping("/getNotifications")
+	private ResponseEntity getNotification() {
+		Notification notification = notificationRepository.findById(252).get();
+
+
+
+		return ResponseEntity.ok().body(notification.getContent());
 	}
 }

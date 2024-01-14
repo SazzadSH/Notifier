@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.data.relational.core.sql.In;
+import org.springframework.data.relational.core.sql.Not;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -119,10 +120,8 @@ public class NotificationServiceImpl implements NotificationService {
 		}
 		//Notification expiration
 		if(notificationDTO.getExpireAt() == null) notificationDTO.setExpireAt(this.getDefaultNotificationExpiryTime());
-
 		Notification notification = this.buildNotificationEntity(notificationDTO);
-		log.info("SHLOG:: Built notification entity: " + notification);
-		log.info("SHLOG:: Built notification criteria: " + notification.getNotificationTargets());
+		log.info("SHLOG:: Built notification entity.");
 		notificationRepository.save(notification);
 		log.info("SHLOG:: Notification created");
 		return ResponseEntity.ok().build();
@@ -181,10 +180,9 @@ public class NotificationServiceImpl implements NotificationService {
 	// creates notification entity to persist
 	private Notification buildNotificationEntity(NotificationDTO notificationDTO) {
 		log.info("SHLOG:: Building Notification Entity");
-		return Notification.builder()
+		Notification notification = Notification.builder()
 				.createdBy(userRepository.getReferenceById(notificationDTO.getCreatedBy()))
 				.notificationTypes(this.stringifyEnumList(notificationDTO.getNotificationTypeEnumSet()))
-				.notificationTargets(this.buildTargetEntitySet(notificationDTO.getNotificationTargetDTOSet()))
 				.notificationFrom(notificationDTO.getNotificationFrom())
 				.content(notificationDTO.getContent())
 				.createdAt(LocalDateTime.now())
@@ -192,44 +190,44 @@ public class NotificationServiceImpl implements NotificationService {
 				.expiresAt(notificationDTO.getExpireAt())
 				.status(notificationDTO.getScheduledAt() == null ? NotificationStatus.QUEUED : NotificationStatus.SCHEDULED)
 				.build();
+		notification.setNotificationTargets(this.buildTargetEntitySet(notificationDTO.getNotificationTargetDTOSet(), notification));
+		return notification;
 	}
 
-	private Set<NotificationTarget> buildTargetEntitySet(Set<NotificationTargetDTO> notificationTargetDTOSet) {
+	private Set<NotificationTarget> buildTargetEntitySet(Set<NotificationTargetDTO> notificationTargetDTOSet, Notification notification) {
 		log.info("Creating target entity set");
 		Set<NotificationTarget> notificationTargetSet = notificationTargetDTOSet.stream()
-				.map(this::convertTargetDTOtoEntity)
+				.map(notificationTarget -> this.convertTargetDTOtoEntity(notificationTarget, notification))
 				.collect(Collectors.toSet());
 		log.info("Notification taget entity set: " + notificationTargetSet);
 		return notificationTargetSet;
 	}
 
-	private NotificationTarget convertTargetDTOtoEntity(NotificationTargetDTO notificationTargetDTO) {
+	private NotificationTarget convertTargetDTOtoEntity(NotificationTargetDTO notificationTargetDTO, Notification notification) {
+		NotificationTarget notificationTarget = new NotificationTarget();
+		notificationTarget.setNotification(notification);
 		if(notificationTargetDTO.getBulkFile() != null && notificationTargetDTO.getBulkFile().trim().isEmpty())
-			return NotificationTarget.builder()
-					.bulkFile(notificationTargetDTO.getBulkFile())
-					.build();
-		else if(notificationTargetDTO.getUser() != null) return NotificationTarget.builder()
-				.user(userRepository.getReferenceById(notificationTargetDTO.getUser()))
-				.build();
+			notificationTarget.setBulkFile(notificationTargetDTO.getBulkFile());
+		else if(notificationTargetDTO.getUser() != null)
+			notificationTarget.setUser(userRepository.getReferenceById(notificationTargetDTO.getUser()));
+		else {
+			notificationTarget.setIncludeOffice(notificationTargetDTO.getIncludeOffices());
+			notificationTarget.setIncludeInstitutes(notificationTargetDTO.getIncludeInstitutes());
+			notificationTarget.setUserType(notificationTargetDTO.getUserType());
 
-		NotificationTarget notificationTarget = NotificationTarget.builder()
-				.includeOffice(notificationTargetDTO.getIncludeOffices())
-				.includeInstitutes(notificationTargetDTO.getIncludeInstitutes())
-				.userType(notificationTargetDTO.getUserType())
-				.build();
+			if(notificationTargetDTO.getDesignation() != null)
+				notificationTarget.setDesignation(designationRepository.getReferenceById(notificationTargetDTO.getDesignation()));
 
-		if(notificationTargetDTO.getDesignation() != null)
-			notificationTarget.setDesignation(designationRepository.getReferenceById(notificationTargetDTO.getDesignation()));
+			if(notificationTargetDTO.getInstitute() != null && notificationTargetDTO.getIncludeInstitutes().equals(Boolean.TRUE))
+				notificationTarget.setEducationalInstitute(educationalInstituteRepository.getReferenceById(notificationTargetDTO.getInstitute()));
 
-		if(notificationTargetDTO.getInstitute() != null && notificationTargetDTO.getIncludeInstitutes().equals(Boolean.TRUE))
-			notificationTarget.setEducationalInstitute(educationalInstituteRepository.getReferenceById(notificationTargetDTO.getInstitute()));
+			if(notificationTargetDTO.getOffice() != null && notificationTargetDTO.getIncludeOffices().equals(Boolean.TRUE))
+				notificationTarget.setOffice(officeRepository.getReferenceById(notificationTargetDTO.getOffice()));
 
-		if(notificationTargetDTO.getOffice() != null && notificationTargetDTO.getIncludeOffices().equals(Boolean.TRUE))
-			notificationTarget.setOffice(officeRepository.getReferenceById(notificationTargetDTO.getOffice()));
+			if(notificationTargetDTO.getInstitute() != null || notificationTargetDTO.getOffice() != null) return notificationTarget;
 
-		if(notificationTargetDTO.getInstitute() != null || notificationTargetDTO.getOffice() != null) return notificationTarget;
-
-		notificationTarget.setLocation(locationRepositoty.getReferenceById(notificationTargetDTO.getLocation()));
+			notificationTarget.setLocation(locationRepositoty.getReferenceById(notificationTargetDTO.getLocation()));
+		}
 		return notificationTarget;
 	}
 
